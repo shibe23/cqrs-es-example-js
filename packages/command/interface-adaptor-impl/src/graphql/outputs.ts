@@ -6,6 +6,11 @@ class GroupChatOutput {
   groupChatId!: string;
 }
 
+class AttendanceOutput {
+  @Field()
+  unixtime!: string;
+}
+
 @ObjectType()
 class MessageOutput {
   @Field()
@@ -20,4 +25,4 @@ class HealthCheckOutput {
   value!: string;
 }
 
-export { GroupChatOutput, MessageOutput, HealthCheckOutput };
+export { GroupChatOutput, AttendanceOutput, MessageOutput, HealthCheckOutput };

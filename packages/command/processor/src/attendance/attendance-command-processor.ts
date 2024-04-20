@@ -17,7 +17,7 @@ import * as TE from "fp-ts/TaskEither";
 import { pipe } from "fp-ts/function";
 import { ProcessError, ProcessInternalError, ProcessNotFoundError } from "../common";
 
-class GroupChatCommandProcessor {
+class AttendanceCommandProcessor {
   private constructor(
     private readonly groupChatRepository: GroupChatRepository,
   ) {}
@@ -182,8 +182,8 @@ class GroupChatCommandProcessor {
 
   static of(
     groupChatRepository: GroupChatRepository,
-  ): GroupChatCommandProcessor {
-    return new GroupChatCommandProcessor(groupChatRepository);
+  ): AttendanceCommandProcessor {
+    return new AttendanceCommandProcessor(groupChatRepository);
   }
 
   private convertToProcessError(e: unknown): ProcessError {
@@ -255,5 +255,5 @@ class GroupChatCommandProcessor {
 }
 
 export {
-  GroupChatCommandProcessor,
+  AttendanceCommandProcessor,
 };
