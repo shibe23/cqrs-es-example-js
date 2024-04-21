@@ -1,179 +1,31 @@
 import {
-  GroupChat,
-  GroupChatDeleteError,
-  GroupChatEvent,
-  GroupChatId,
-  GroupChatName,
-  MemberRole,
-  Message,
-  MessageId,
+  Attendance,
+  AttendanceEvent,
+  AttendanceId,
   UserAccountId,
 } from "cqrs-es-example-js-command-domain";
 import {
-  GroupChatRepository,
+  AttendanceRepository,
   RepositoryError,
 } from "cqrs-es-example-js-command-interface-adaptor-if";
 import * as TE from "fp-ts/TaskEither";
 import { pipe } from "fp-ts/function";
-import { ProcessError, ProcessInternalError, ProcessNotFoundError } from "../common";
+import { ProcessError, ProcessInternalError } from "../common";
 
 class AttendanceCommandProcessor {
   private constructor(
-    private readonly groupChatRepository: GroupChatRepository,
+    private readonly attendanceRepository: AttendanceRepository,
   ) {}
-
-  createGroupChat(
-    name: GroupChatName,
+  createAttendance(
     executorId: UserAccountId,
-  ): TE.TaskEither<ProcessError, GroupChatEvent> {
+  ): TE.TaskEither<ProcessError, AttendanceEvent> {
     return pipe(
-      TE.right(GroupChatId.generate()),
-      TE.chain((id) => TE.right(GroupChat.create(id, name, executorId))),
-      TE.chain(([groupChat, groupChatCreated]) =>
+      TE.right(AttendanceId.generate()),
+      TE.chain((id) => TE.right(Attendance.create(id, executorId))),
+      TE.chain(([attendance, attendanceCreated]) =>
         pipe(
-          this.groupChatRepository.store(groupChatCreated, groupChat),
-          TE.map(() => groupChatCreated),
-        ),
-      ),
-      TE.mapLeft(this.convertToProcessError),
-    );
-  }
-
-  deleteGroupChat(
-    id: GroupChatId,
-    executorId: UserAccountId,
-  ): TE.TaskEither<ProcessError, GroupChatEvent> {
-    return pipe(
-      this.groupChatRepository.findById(id),
-      TE.chainW(this.getOrError),
-      TE.chainW((groupChat) =>
-        pipe(
-          this.deleteGroupChatAsync(groupChat, executorId),
-          TE.chainW(([groupChat, groupChatDeleted]) =>
-            pipe(
-              this.groupChatRepository.store(groupChatDeleted, groupChat),
-              TE.map(() => groupChatDeleted),
-            ),
-          ),
-        ),
-      ),
-      TE.mapLeft(this.convertToProcessError),
-    );
-  }
-
-  renameGroupChat(
-    id: GroupChatId,
-    name: GroupChatName,
-    executorId: UserAccountId,
-  ): TE.TaskEither<ProcessError, GroupChatEvent> {
-    return pipe(
-      this.groupChatRepository.findById(id),
-      TE.chainW(this.getOrError),
-      TE.chainW((groupChat) =>
-        pipe(
-          this.renameGroupChatAsync(groupChat, name, executorId),
-          TE.chainW(([groupChat, groupChatDeleted]) =>
-            pipe(
-              this.groupChatRepository.store(groupChatDeleted, groupChat),
-              TE.map(() => groupChatDeleted),
-            ),
-          ),
-        ),
-      ),
-      TE.mapLeft(this.convertToProcessError),
-    );
-  }
-
-  addMemberToGroupChat(
-    id: GroupChatId,
-    memberId: UserAccountId,
-    memberRole: MemberRole,
-    executorId: UserAccountId,
-  ): TE.TaskEither<ProcessError, GroupChatEvent> {
-    return pipe(
-      this.groupChatRepository.findById(id),
-      TE.chainW(this.getOrError),
-      TE.chainW((groupChat) =>
-        pipe(
-          this.addMemberAsync(groupChat, memberId, memberRole, executorId),
-          TE.chainW(([groupChat, groupChatMemberAdded]) =>
-            pipe(
-              this.groupChatRepository.store(groupChatMemberAdded, groupChat),
-              TE.map(() => groupChatMemberAdded),
-            ),
-          ),
-        ),
-      ),
-      TE.mapLeft(this.convertToProcessError),
-    );
-  }
-
-  removeMemberFromGroupChat(
-    id: GroupChatId,
-    memberId: UserAccountId,
-    executorId: UserAccountId,
-  ): TE.TaskEither<ProcessError, GroupChatEvent> {
-    return pipe(
-      this.groupChatRepository.findById(id),
-      TE.chainW(this.getOrError),
-      TE.chainW((groupChat) =>
-        pipe(
-          this.removeMemberByIdAsync(groupChat, memberId, executorId),
-          TE.chainW(([groupChat, groupChatMemberRemoved]) =>
-            pipe(
-              this.groupChatRepository.store(groupChatMemberRemoved, groupChat),
-              TE.map(() => groupChatMemberRemoved),
-            ),
-          ),
-        ),
-      ),
-      TE.mapLeft(this.convertToProcessError),
-    );
-  }
-
-  postMessageToGroupChat(
-    id: GroupChatId,
-    message: Message,
-    executorId: UserAccountId,
-  ): TE.TaskEither<ProcessError, GroupChatEvent> {
-    return pipe(
-      this.groupChatRepository.findById(id),
-      TE.chainW(this.getOrError),
-      TE.chainW((groupChat) =>
-        pipe(
-          this.postMessageAsync(groupChat, message, executorId),
-          TE.chainW(([groupChat, groupChatMessagePosted]) =>
-            pipe(
-              this.groupChatRepository.store(groupChatMessagePosted, groupChat),
-              TE.map(() => groupChatMessagePosted),
-            ),
-          ),
-        ),
-      ),
-      TE.mapLeft(this.convertToProcessError),
-    );
-  }
-
-  deleteMessageFromGroupChat(
-    id: GroupChatId,
-    messageId: MessageId,
-    executorId: UserAccountId,
-  ): TE.TaskEither<ProcessError, GroupChatEvent> {
-    return pipe(
-      this.groupChatRepository.findById(id),
-      TE.chainW(this.getOrError),
-      TE.chainW((groupChat) =>
-        pipe(
-          this.deleteMessageAsync(groupChat, messageId, executorId),
-          TE.chainW(([groupChat, groupChatMessageDeleted]) =>
-            pipe(
-              this.groupChatRepository.store(
-                groupChatMessageDeleted,
-                groupChat,
-              ),
-              TE.map(() => groupChatMessageDeleted),
-            ),
-          ),
+          this.attendanceRepository.store(attendanceCreated, attendance),
+          TE.map(() => attendanceCreated),
         ),
       ),
       TE.mapLeft(this.convertToProcessError),
@@ -181,77 +33,35 @@ class AttendanceCommandProcessor {
   }
 
   static of(
-    groupChatRepository: GroupChatRepository,
+    attendanceRepository: AttendanceRepository,
   ): AttendanceCommandProcessor {
-    return new AttendanceCommandProcessor(groupChatRepository);
+    return new AttendanceCommandProcessor(attendanceRepository);
   }
 
   private convertToProcessError(e: unknown): ProcessError {
     if (e instanceof ProcessError) {
       return e;
     } else if (e instanceof RepositoryError) {
-      return new ProcessInternalError("Failed to delete group chat", e);
-    } else if (e instanceof GroupChatDeleteError) {
-      return new ProcessInternalError("Failed to delete group chat", e);
+      return new ProcessInternalError("Failed to delete attendance", e);
     }
     throw e;
   }
 
-  private getOrError(
-    groupChatOpt: GroupChat | undefined,
-  ): TE.TaskEither<ProcessError, GroupChat> {
-    return groupChatOpt === undefined
-      ? TE.left(new ProcessNotFoundError("Group chat not found"))
-      : TE.right(groupChatOpt);
-  }
+  // private getOrError(
+  //   attendanceOpt: Attendance | undefined,
+  // ): TE.TaskEither<ProcessError, Attendance> {
+  //   return attendanceOpt === undefined
+  //     ? TE.left(new ProcessNotFoundError("Attendance not found"))
+  //     : TE.right(attendanceOpt);
+  // }
 
-  private deleteGroupChatAsync(
-    groupChat: GroupChat,
-    executorId: UserAccountId,
-  ) {
-    return TE.fromEither(groupChat.delete(executorId));
-  }
-
-  private renameGroupChatAsync(
-    groupChat: GroupChat,
-    name: GroupChatName,
-    executorId: UserAccountId,
-  ) {
-    return TE.fromEither(groupChat.rename(name, executorId));
-  }
-
-  private addMemberAsync(
-    groupChat: GroupChat,
-    memberId: UserAccountId,
-    memberRole: MemberRole,
-    executorId: UserAccountId,
-  ) {
-    return TE.fromEither(groupChat.addMember(memberId, memberRole, executorId));
-  }
-
-  private removeMemberByIdAsync(
-    groupChat: GroupChat,
-    memberId: UserAccountId,
-    executorId: UserAccountId,
-  ) {
-    return TE.fromEither(groupChat.removeMemberById(memberId, executorId));
-  }
-
-  private postMessageAsync(
-    groupChat: GroupChat,
-    message: Message,
-    executorId: UserAccountId,
-  ) {
-    return TE.fromEither(groupChat.postMessage(message, executorId));
-  }
-
-  private deleteMessageAsync(
-    groupChat: GroupChat,
-    messageId: MessageId,
-    executorId: UserAccountId,
-  ) {
-    return TE.fromEither(groupChat.deleteMessage(messageId, executorId));
-  }
+  // private postMessageAsync(
+  //   attendance: Attendance,
+  //   attendanceStamp: AttendanceStamp,
+  //   executorId: UserAccountId,
+  // ) {
+  //   return TE.fromEither(attendance.postAttendanceStamp(attendanceStamp, executorId));
+  // }
 }
 
 export {

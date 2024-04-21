@@ -4,14 +4,7 @@ import {
   GroupChatId,
 } from "cqrs-es-example-js-command-domain";
 import * as TE from "fp-ts/TaskEither";
-
-class RepositoryError extends Error {
-  constructor(message: string, cause?: Error) {
-    super(message);
-    this.name = "RepositoryError";
-    this.cause = cause;
-  }
-}
+import { RepositoryError } from "../common";
 
 interface GroupChatRepository {
   withRetention(numberOfEvents: number): GroupChatRepository;

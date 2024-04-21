@@ -7,7 +7,7 @@ import {
   PostMessageInput,
   RemoveMemberInput,
   RenameGroupChatInput,
-  CreateAttendanceStampInput
+  CreateAttendanceInput
 } from "./inputs";
 import {
   ProcessError,
@@ -421,39 +421,24 @@ class AttendanceCommandResolver {
     return { value: "OK" };
   }
 
-  @Mutation(() => GroupChatOutput)
-  async createAttendanceStamp(
+  @Mutation(() => AttendanceOutput)
+  async createAttendance(
     @Ctx() { attendanceCommandProcessor }: AttendanceCommandContext,
-    @Arg("input") input: CreateAttendanceStampInput,
+    @Arg("input") input: CreateAttendanceInput,
   ): Promise<AttendanceOutput> {
     return pipe(
-      this.validateAttendanceStamp(input.timestamp),
-      TE.chainW((validatedTimestamp) =>
-        pipe(
-          this.validateUserAccountId(input.executorId),
-          TE.map((validatedExecutorId) => ({
-            validatedTimestamp,
-            validatedExecutorId,
-          })),
-        ),
-      ),
-      TE.chainW(({ validatedTimestamp, validatedExecutorId }) =>
-        attendanceCommandProcessor.createGroupChat(
-          validatedTimestamp,
+      this.validateUserAccountId(input.executorId),
+      TE.chainW(( validatedExecutorId ) =>
+        attendanceCommandProcessor.createAttendance(
           validatedExecutorId,
         ),
       ),
-      TE.map((groupChatEvent) => ({
-        groupChatId: groupChatEvent.aggregateId.asString(),
+      TE.map((attendanceEvent) => ({
+        executorId: attendanceEvent.executorId.asString(),
       })),
       TE.mapLeft(this.convertToError),
       this.toTask(),
     )();
-  }
-  private validateAttendanceStamp(
-    value: string,
-  ): TaskEither<string, GroupChatName> {
-    return TE.fromEither(GroupChatName.validate(value));
   }
   private validateUserAccountId(
     value: string,

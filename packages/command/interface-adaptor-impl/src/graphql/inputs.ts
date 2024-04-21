@@ -9,14 +9,6 @@ class CreateGroupChatInput {
   executorId!: string;
 }
 
-class CreateAttendanceStampInput {
-  @Field()
-  timestamp!: string;
-
-  @Field()
-  executorId!: string;
-}
-
 @InputType()
 class DeleteGroupChatInput {
   @Field()
@@ -89,12 +81,18 @@ class DeleteMessageInput {
   executorId!: string;
 }
 
+@InputType()
+class CreateAttendanceInput {
+  @Field()
+  executorId!: string;
+}
+
 export {
   CreateGroupChatInput,
-  CreateAttendanceStampInput,
   DeleteGroupChatInput,
   RenameGroupChatInput,
   RemoveMemberInput,
   PostMessageInput,
   DeleteMessageInput,
+  CreateAttendanceInput,
 };

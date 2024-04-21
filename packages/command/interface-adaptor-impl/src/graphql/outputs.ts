@@ -8,7 +8,7 @@ class GroupChatOutput {
 
 class AttendanceOutput {
   @Field()
-  unixtime!: string;
+  executorId!: string;
 }
 
 @ObjectType()
