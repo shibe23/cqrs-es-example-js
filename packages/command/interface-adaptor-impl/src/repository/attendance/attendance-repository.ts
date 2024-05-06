@@ -1,7 +1,7 @@
 import { EventStore, OptimisticLockError } from "event-store-adapter-js";
 import {
-  AttendanceEvent,
-  Attendance,
+  AttendanceStampEvent,
+  AttendanceStamp,
   AttendanceId,
 } from "cqrs-es-example-js-command-domain";
 import {
@@ -10,21 +10,21 @@ import {
 } from "cqrs-es-example-js-command-interface-adaptor-if";
 import * as TE from "fp-ts/TaskEither";
 
-type SnapshotDecider = (event: AttendanceEvent, snapshot: Attendance) => boolean;
+type SnapshotDecider = (event: AttendanceStampEvent, snapshot: AttendanceStamp) => boolean;
 
 class AttendanceRepositoryImpl implements AttendanceRepository {
   private constructor(
     public readonly eventStore: EventStore<
       AttendanceId,
-      Attendance,
-      AttendanceEvent
+      AttendanceStamp,
+      AttendanceStampEvent
     >,
     private readonly snapshotDecider: SnapshotDecider | undefined,
   ) {}
 
   store(
-    event: AttendanceEvent,
-    snapshot: Attendance,
+    event: AttendanceStampEvent,
+    snapshot: AttendanceStamp,
   ): TE.TaskEither<RepositoryError, void> {
     if (
       event.isCreated ||
@@ -38,7 +38,7 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
   }
 
   storeEvent(
-    event: AttendanceEvent,
+    event: AttendanceStampEvent,
     version: number,
   ): TE.TaskEither<RepositoryError, void> {
     return TE.tryCatch(
@@ -61,8 +61,8 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
   }
 
   storeEventAndSnapshot(
-    event: AttendanceEvent,
-    snapshot: Attendance,
+    event: AttendanceStampEvent,
+    snapshot: AttendanceStamp,
   ): TE.TaskEither<RepositoryError, void> {
     return TE.tryCatch(
       () => this.eventStore.persistEventAndSnapshot(event, snapshot),
@@ -85,7 +85,7 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
 
   findById(
     id: AttendanceId,
-  ): TE.TaskEither<RepositoryError, Attendance | undefined> {
+  ): TE.TaskEither<RepositoryError, AttendanceStamp | undefined> {
     return TE.tryCatch(
       async () => {
         const snapshot = await this.eventStore.getLatestSnapshotById(id);
@@ -96,7 +96,7 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
             id,
             snapshot.sequenceNumber + 1,
           );
-          return Attendance.replay(events, snapshot);
+          return AttendanceStamp.replay(events, snapshot);
         }
       },
       (reason) => {
@@ -109,7 +109,7 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
   }
 
   static of(
-    eventStore: EventStore<AttendanceId, Attendance, AttendanceEvent>,
+    eventStore: EventStore<AttendanceId, AttendanceStamp, AttendanceStampEvent>,
     snapshotDecider: SnapshotDecider | undefined = undefined,
   ): AttendanceRepository {
     return new AttendanceRepositoryImpl(eventStore, snapshotDecider);
@@ -123,7 +123,7 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
   }
 
   static retentionCriteriaOf(numberOfEvents: number): SnapshotDecider {
-    return (event: AttendanceEvent, _: Attendance) => {
+    return (event: AttendanceStampEvent, _: AttendanceStamp) => {
       return event.sequenceNumber % numberOfEvents == 0;
     };
   }

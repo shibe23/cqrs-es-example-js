@@ -8,6 +8,8 @@ class GroupChatOutput {
 
 class AttendanceOutput {
   @Field()
+  attendanceId!: string;
+  @Field()
   executorId!: string;
 }
 

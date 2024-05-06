@@ -16,6 +16,7 @@ import {
   AttendanceCommandProcessor
 } from "cqrs-es-example-js-command-processor";
 import {
+  AttendanceStampStampingAt,
   GroupChatError,
   GroupChatId,
   GroupChatName,
@@ -428,14 +429,27 @@ class AttendanceCommandResolver {
   ): Promise<AttendanceOutput> {
     return pipe(
       this.validateUserAccountId(input.executorId),
-      TE.chainW(( validatedExecutorId ) =>
-        attendanceCommandProcessor.createAttendance(
-          validatedExecutorId,
+      TE.chainW((validatedExecutorId) =>
+        pipe(
+          this.validateAttendanceStampStampingAt(input.stampingAt),
+          TE.map((validatedStampingAt) => ({
+            validatedExecutorId,
+            validatedStampingAt,
+          })),
         ),
       ),
-      TE.map((attendanceEvent) => ({
-        executorId: attendanceEvent.executorId.asString(),
-      })),
+      TE.chainW(({ validatedExecutorId, validatedStampingAt }) =>
+          pipe(
+            attendanceCommandProcessor.createAttendanceStamp(
+              validatedExecutorId,
+              validatedStampingAt
+            ),
+            TE.map((attendanceStampEvent) => ({
+              attendanceId: attendanceStampEvent.aggregateId.asString(),
+              executorId: attendanceStampEvent.executorId.asString(),
+            })),
+          ),
+      ),
       TE.mapLeft(this.convertToError),
       this.toTask(),
     )();
@@ -444,6 +458,11 @@ class AttendanceCommandResolver {
     value: string,
   ): TaskEither<string, UserAccountId> {
     return TE.fromEither(UserAccountId.validate(value));
+  }
+  private validateAttendanceStampStampingAt(
+    value: string,
+  ): TaskEither<string, AttendanceStampStampingAt> {
+    return TE.fromEither(AttendanceStampStampingAt.validate(new Date(value)));
   }
   private convertToError(error: string | ProcessError): Error {
     if (typeof error === "string") {

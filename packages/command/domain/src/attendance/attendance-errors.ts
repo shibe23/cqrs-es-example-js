@@ -1,8 +1,8 @@
-abstract class AttendanceError extends Error {}
+abstract class AttendanceStampError extends Error {}
 
 const AttendancePostMessageErrorTypeSymbol = Symbol("AttendancePostError");
 
-class AttendancePostMessageError extends AttendanceError {
+class AttendanceStampPostedError extends AttendanceStampError {
   symbol: typeof AttendancePostMessageErrorTypeSymbol =
     AttendancePostMessageErrorTypeSymbol;
 
@@ -10,12 +10,12 @@ class AttendancePostMessageError extends AttendanceError {
     super(message, error);
   }
 
-  static of(message: string, error?: Error): AttendancePostMessageError {
-    return new AttendancePostMessageError(message, error);
+  static of(message: string, error?: Error): AttendanceStampPostedError {
+    return new AttendanceStampPostedError(message, error);
   }
 }
 export {
-  AttendanceError,
-  AttendancePostMessageError,
+  AttendanceStampError,
+  AttendanceStampPostedError,
   AttendancePostMessageErrorTypeSymbol,
 };

@@ -1,5 +1,5 @@
+import { AttendanceId } from "./attendance-id";
 import { convertJSONToAttendanceStamp, AttendanceStamp } from "./attendance-stamp";
-import { AttendanceStampId } from "./attendance-stamp-id";
 import * as O from "fp-ts/Option";
 
 const AttendanceStampsTypeSymbol = Symbol("AttendanceStamps");
@@ -22,7 +22,7 @@ class AttendanceStamps {
     );
   }
 
-  removeAttendanceStampById(attendanceStampId: AttendanceStampId): O.Option<[AttendanceStamps, AttendanceStamp]> {
+  removeAttendanceStampById(attendanceStampId: AttendanceId): O.Option<[AttendanceStamps, AttendanceStamp]> {
     const attendanceStamp = this.values.get(attendanceStampId.value);
     if (attendanceStamp === undefined) {
       return O.none;
@@ -32,11 +32,11 @@ class AttendanceStamps {
     return O.some([new AttendanceStamps(newMap), attendanceStamp]);
   }
 
-  containsById(attendanceStampId: AttendanceStampId): boolean {
+  containsById(attendanceStampId: AttendanceId): boolean {
     return this.values.has(attendanceStampId.value);
   }
 
-  findById(attendanceStampId: AttendanceStampId): AttendanceStamp | undefined {
+  findById(attendanceStampId: AttendanceId): AttendanceStamp | undefined {
     return this.values.get(attendanceStampId.value);
   }
 
@@ -44,15 +44,20 @@ class AttendanceStamps {
     return Array.from(this.values.values());
   }
 
-  toMap(): Map<AttendanceStampId, AttendanceStamp> {
+  toMap(): Map<AttendanceId, AttendanceStamp> {
     return new Map(
-      Array.from(this.values.entries()).map(([k, v]) => [AttendanceStampId.of(k), v]),
+      Array.from(this.values.entries()).map(([k, v]) => [AttendanceId.of(k), v]),
     );
   }
 
   size(): number {
     return this.values.size;
   }
+
+  asString() {
+    return this.values
+  }
+
 
   toString() {
     return `AttendanceStamps(${JSON.stringify(this.toArray().map((m) => m.toString()))})`;
@@ -81,7 +86,7 @@ class AttendanceStamps {
     );
   }
 
-  static fromMap(attendanceStamps: Map<AttendanceStampId, AttendanceStamp>): AttendanceStamps {
+  static fromMap(attendanceStamps: Map<AttendanceId, AttendanceStamp>): AttendanceStamps {
     return new AttendanceStamps(
       new Map(
         Array.from(attendanceStamps.entries()).map(([k, v]) => [k.asString(), v]),

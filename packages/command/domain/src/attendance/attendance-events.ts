@@ -2,60 +2,20 @@ import { Event } from "event-store-adapter-js";
 import { convertJSONToAttendanceId, AttendanceId } from "./attendance-id";
 import { convertJSONToUserAccountId, UserAccountId } from "../user-account";
 import * as Infrastructure from "cqrs-es-example-js-infrastructure";
-import { AttendanceStamp } from "./attendance-stamp";
+import { AttendanceStampStampingAt, convertJSONToAttendanceStampStampingAt } from "./attendance-stamp-stamping-at";
 
-type AttendanceEventTypeSymbol =
-  | typeof AttendanceCreatedTypeSymbol
+type AttendanceStampEventTypeSymbol =
   | typeof AttendanceStampPostedTypeSymbol
 
-interface AttendanceEvent extends Event<AttendanceId> {
-  symbol: AttendanceEventTypeSymbol;
+interface AttendanceStampEvent extends Event<AttendanceId> {
+  symbol: AttendanceStampEventTypeSymbol;
   executorId: UserAccountId;
   toString: () => string;
 }
 
-const AttendanceCreatedTypeSymbol = Symbol("AttendanceCreated");
-
-class AttendanceCreated implements AttendanceEvent {
-  readonly symbol: typeof AttendanceCreatedTypeSymbol =
-    AttendanceCreatedTypeSymbol;
-  readonly typeName = "AttendanceCreated";
-
-  private constructor(
-    public readonly id: string,
-    public readonly aggregateId: AttendanceId,
-    public readonly userAccountId: UserAccountId,
-    public readonly executorId: UserAccountId,
-    public readonly sequenceNumber: number,
-    public readonly occurredAt: Date,
-  ) {}
-
-  isCreated: boolean = true;
-
-  toString() {
-    return `AttendanceCreated(${this.id.toString()}, ${this.aggregateId.toString()}, ${this.userAccountId.toString()}, ${this.executorId.toString()}, ${this.sequenceNumber}, ${this.occurredAt.toISOString()})`;
-  }
-
-  static of(
-    aggregateId: AttendanceId,
-    userAccountId: UserAccountId,
-    executorId: UserAccountId,
-    sequenceNumber: number,
-  ): AttendanceCreated {
-    return new AttendanceCreated(
-      Infrastructure.generateULID(),
-      aggregateId,
-      userAccountId,
-      executorId,
-      sequenceNumber,
-      new Date(),
-    );
-  }
-}
-
 const AttendanceStampPostedTypeSymbol = Symbol("AttendanceStampPosted");
 
-class AttendanceStampPosted implements AttendanceEvent {
+class AttendanceStampPosted implements AttendanceStampEvent {
   readonly symbol: typeof AttendanceStampPostedTypeSymbol =
     AttendanceStampPostedTypeSymbol;
   readonly typeName = "AttendanceStampPosted";
@@ -63,7 +23,8 @@ class AttendanceStampPosted implements AttendanceEvent {
   private constructor(
     public readonly id: string,
     public readonly aggregateId: AttendanceId,
-    public readonly attendanceStamp: AttendanceStamp,
+    public readonly stampingAt: AttendanceStampStampingAt, // TODO: domain object化
+    public readonly status : string, // TODO: domain object化
     public readonly executorId: UserAccountId,
     public readonly sequenceNumber: number,
     public readonly occurredAt: Date,
@@ -72,19 +33,20 @@ class AttendanceStampPosted implements AttendanceEvent {
   isCreated: boolean = false;
 
   toString() {
-    return `AttendanceMessagePosted(${this.id.toString()}, ${this.aggregateId.toString()}, ${this.attendanceStamp.toString()}, ${this.executorId.toString()}, ${this.sequenceNumber}, ${this.occurredAt.toISOString()})`;
+    return `AttendanceStampPosted(${this.id.toString()}, ${this.aggregateId.toString()},${this.stampingAt.toString()},  ${this.status.toString()}, ${this.executorId.toString()}, ${this.sequenceNumber}, ${this.occurredAt.toISOString()})`;
   }
 
   static of(
     aggregateId: AttendanceId,
-    attendanceStamp: AttendanceStamp,
+    stampingAt: AttendanceStampStampingAt,
     executorId: UserAccountId,
     sequenceNumber: number,
   ): AttendanceStampPosted {
     return new AttendanceStampPosted(
       Infrastructure.generateULID(),
       aggregateId,
-      attendanceStamp,
+      stampingAt,
+      "ENABLED",
       executorId,
       sequenceNumber,
       new Date(),
@@ -93,15 +55,15 @@ class AttendanceStampPosted implements AttendanceEvent {
 }
 
 class AttendanceEventFactory {
-  static ofAttendanceCreated(
+  static ofAttendanceStampPosted(
     aggregateId: AttendanceId,
-    userAccountId: UserAccountId,
     executorId: UserAccountId,
+    stampingAt: AttendanceStampStampingAt,
     sequenceNumber: number,
-  ): AttendanceCreated {
-    return AttendanceCreated.of(
+  ): AttendanceStampPosted {
+    return AttendanceStampPosted.of(
       aggregateId,
-      userAccountId,
+      stampingAt,
       executorId,
       sequenceNumber,
     );
@@ -109,15 +71,15 @@ class AttendanceEventFactory {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function convertJSONToAttendanceEvent(json: any): AttendanceEvent {
+function convertJSONToAttendanceStampEvent(json: any): AttendanceStampEvent {
   const id = convertJSONToAttendanceId(json.data.aggregateId);
-  const userAccountId = convertJSONToUserAccountId(json.data.userAccountId);
+  const stampingAt = convertJSONToAttendanceStampStampingAt(json.data.stampingAt);
   const executorId = convertJSONToUserAccountId(json.data.executorId);
   switch (json.type) {
-    case "AttendanceCreated": {
-      return AttendanceCreated.of(
+    case "AttendanceStampPosted": {
+      return AttendanceStampPosted.of(
         id,
-        userAccountId,
+        stampingAt,
         executorId,
         json.data.sequenceNumber,
       );
@@ -128,12 +90,10 @@ function convertJSONToAttendanceEvent(json: any): AttendanceEvent {
 }
 
 export {
-  AttendanceEvent,
-  AttendanceEventTypeSymbol,
-  AttendanceCreated,
-  AttendanceCreatedTypeSymbol,
+  AttendanceStampEvent,
+  AttendanceStampEventTypeSymbol,
   AttendanceStampPosted,
   AttendanceStampPostedTypeSymbol,
   AttendanceEventFactory,
-  convertJSONToAttendanceEvent,
+  convertJSONToAttendanceStampEvent,
 };

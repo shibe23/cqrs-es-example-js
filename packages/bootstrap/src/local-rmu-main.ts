@@ -1,4 +1,4 @@
-import { GroupChatDao, ReadModelUpdater } from "cqrs-es-example-js-rmu";
+import { GroupChatDao, AttendanceStampDao, GroupChatReadModelUpdater, AttendanceReadModelUpdater } from "cqrs-es-example-js-rmu";
 import { DescribeTableCommand, DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
   _Record,
@@ -95,8 +95,11 @@ async function localRmuMain() {
     logger.info("Params: " + e.params);
     logger.info("Duration: " + e.duration + "ms");
   });
-  const dao = GroupChatDao.of(prisma);
-  const readModelUpdater = ReadModelUpdater.of(dao);
+  const groupChatDao = GroupChatDao.of(prisma);
+  const groupChatReadModelUpdater = GroupChatReadModelUpdater.of(groupChatDao);
+  const attendanceDao = AttendanceStampDao.of(prisma);
+  const attendanceReadModelUpdater = AttendanceReadModelUpdater.of(attendanceDao);
+  const readModelUpdaters = [groupChatReadModelUpdater, attendanceReadModelUpdater];
 
   for (;;) {
     await streamDriver(
@@ -104,7 +107,7 @@ async function localRmuMain() {
       dynamodbStreamsClient,
       streamJournalTableName,
       streamMaxItemCount,
-      readModelUpdater,
+      readModelUpdaters,
     ).catch((error) => {
       logger.error(
         "An error has occurred, but stream processing is restarted. " +
@@ -120,7 +123,7 @@ async function streamDriver(
   dynamodbStreamsClient: DynamoDBStreamsClient,
   streamJournalTableName: string,
   streamMaxItemCount: number,
-  readModelUpdater: ReadModelUpdater,
+  readModelUpdaters: (GroupChatReadModelUpdater | AttendanceReadModelUpdater)[],
 ) {
   const result = await dynamodbClient.send(
     new DescribeTableCommand({ TableName: streamJournalTableName }),
@@ -173,9 +176,11 @@ async function streamDriver(
           const item = getItem(record);
           logger.info(`keys = ${JSON.stringify(keys)}`);
           logger.info(`item = ${JSON.stringify(item)}`);
-          await readModelUpdater.updateReadModel(
-            convertToEvent(record, keys, item, streamArn),
-          );
+          readModelUpdaters.forEach(async (readModelUpdater) => {
+            await readModelUpdater.updateReadModel(
+              convertToEvent(record, keys, item, streamArn),
+            );
+          });
         }
         processedRecordCount += records.length;
         shardIterator = getRecords.NextShardIterator;

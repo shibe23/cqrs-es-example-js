@@ -1,7 +1,8 @@
 import {
-  Attendance,
-  AttendanceEvent,
   AttendanceId,
+  AttendanceStamp,
+  AttendanceStampEvent,
+  AttendanceStampStampingAt,
   UserAccountId,
 } from "cqrs-es-example-js-command-domain";
 import {
@@ -16,18 +17,20 @@ class AttendanceCommandProcessor {
   private constructor(
     private readonly attendanceRepository: AttendanceRepository,
   ) {}
-  createAttendance(
+  createAttendanceStamp(
     executorId: UserAccountId,
-  ): TE.TaskEither<ProcessError, AttendanceEvent> {
+    stampingAt: AttendanceStampStampingAt,
+  ): TE.TaskEither<ProcessError, AttendanceStampEvent> {
     return pipe(
       TE.right(AttendanceId.generate()),
-      TE.chain((id) => TE.right(Attendance.create(id, executorId))),
-      TE.chain(([attendance, attendanceCreated]) =>
+      TE.chain((id) => TE.right(AttendanceStamp.create(id, executorId, stampingAt))),
+      TE.chain(([attendanceStamp, attendanceStampPosted]) =>
         pipe(
-          this.attendanceRepository.store(attendanceCreated, attendance),
-          TE.map(() => attendanceCreated),
+          this.attendanceRepository.store(attendanceStampPosted, attendanceStamp),
+          TE.map(() => attendanceStampPosted),
         ),
       ),
+      TE.mapLeft(this.convertToProcessError),
       TE.mapLeft(this.convertToProcessError),
     );
   }
@@ -48,19 +51,19 @@ class AttendanceCommandProcessor {
   }
 
   // private getOrError(
-  //   attendanceOpt: Attendance | undefined,
-  // ): TE.TaskEither<ProcessError, Attendance> {
+  //   attendanceOpt: AttendanceStamp | undefined,
+  // ): TE.TaskEither<ProcessError, AttendanceStamp> {
   //   return attendanceOpt === undefined
   //     ? TE.left(new ProcessNotFoundError("Attendance not found"))
   //     : TE.right(attendanceOpt);
   // }
 
-  // private postMessageAsync(
-  //   attendance: Attendance,
+  // private postAttendanceStampAsync(
   //   attendanceStamp: AttendanceStamp,
+  //   stampingAt: AttendanceStampStampingAt,
   //   executorId: UserAccountId,
   // ) {
-  //   return TE.fromEither(attendance.postAttendanceStamp(attendanceStamp, executorId));
+  //   return TE.fromEither(attendanceStamp.postAttendanceStamp(stampingAt, executorId));
   // }
 }
 
