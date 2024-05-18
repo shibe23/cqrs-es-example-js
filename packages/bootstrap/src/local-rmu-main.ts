@@ -16,6 +16,11 @@ import {
 } from "aws-lambda";
 import { logger } from "./index";
 
+type ReadModelUpdaters = {
+ "groupchat" : GroupChatReadModelUpdater
+ "attendance": AttendanceReadModelUpdater;
+}
+
 async function localRmuMain() {
   logger.info("Starting local read model updater");
 
@@ -99,7 +104,10 @@ async function localRmuMain() {
   const groupChatReadModelUpdater = GroupChatReadModelUpdater.of(groupChatDao);
   const attendanceDao = AttendanceStampDao.of(prisma);
   const attendanceReadModelUpdater = AttendanceReadModelUpdater.of(attendanceDao);
-  const readModelUpdaters = [groupChatReadModelUpdater, attendanceReadModelUpdater];
+  const readModelUpdaters: ReadModelUpdaters = {
+    "groupchat": groupChatReadModelUpdater,
+    "attendance": attendanceReadModelUpdater,
+  };
 
   for (;;) {
     await streamDriver(
@@ -123,7 +131,7 @@ async function streamDriver(
   dynamodbStreamsClient: DynamoDBStreamsClient,
   streamJournalTableName: string,
   streamMaxItemCount: number,
-  readModelUpdaters: (GroupChatReadModelUpdater | AttendanceReadModelUpdater)[],
+  readModelUpdater: ReadModelUpdaters,
 ) {
   const result = await dynamodbClient.send(
     new DescribeTableCommand({ TableName: streamJournalTableName }),
@@ -176,11 +184,20 @@ async function streamDriver(
           const item = getItem(record);
           logger.info(`keys = ${JSON.stringify(keys)}`);
           logger.info(`item = ${JSON.stringify(item)}`);
-          readModelUpdaters.forEach(async (readModelUpdater) => {
-            await readModelUpdater.updateReadModel(
+          
+          const isGroupChat = keys.pkey.S?.includes("GroupChat")
+          if (isGroupChat) {
+            await readModelUpdater.groupchat.updateReadModel(
               convertToEvent(record, keys, item, streamArn),
             );
-          });
+          }
+
+          const isAttendance = keys.pkey.S?.includes("Attendance")
+          if (isAttendance) {
+            await readModelUpdater.attendance.updateReadModel(
+              convertToEvent(record, keys, item, streamArn),
+            );
+          }
         }
         processedRecordCount += records.length;
         shardIterator = getRecords.NextShardIterator;

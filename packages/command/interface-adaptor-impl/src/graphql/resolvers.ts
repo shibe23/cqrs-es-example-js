@@ -36,11 +36,8 @@ import { Task } from "fp-ts/Task";
 
 interface CommandContext {
   groupChatCommandProcessor: GroupChatCommandProcessor;
-}
-interface AttendanceCommandContext {
   attendanceCommandProcessor: AttendanceCommandProcessor;
 }
-
 @Resolver()
 class GroupChatCommandResolver {
   @Query(() => HealthCheckOutput)
@@ -424,7 +421,7 @@ class AttendanceCommandResolver {
 
   @Mutation(() => AttendanceOutput)
   async createAttendance(
-    @Ctx() { attendanceCommandProcessor }: AttendanceCommandContext,
+    @Ctx() { attendanceCommandProcessor }: CommandContext,
     @Arg("input") input: CreateAttendanceInput,
   ): Promise<AttendanceOutput> {
     return pipe(
