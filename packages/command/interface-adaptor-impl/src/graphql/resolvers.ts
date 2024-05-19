@@ -458,7 +458,7 @@ class AttendanceCommandResolver {
     return TE.fromEither(UserAccountId.validate(value));
   }
   private validateAttendanceStampStampingAt(
-    value: string,
+    value: number,
   ): TaskEither<string, AttendanceStampStampingAt> {
     return TE.fromEither(AttendanceStampStampingAt.validate(new Date(value)));
   }

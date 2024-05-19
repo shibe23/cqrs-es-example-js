@@ -85,7 +85,8 @@ class DeleteMessageInput {
 class CreateAttendanceInput {
   @Field()
   executorId!: string;
-  stampingAt!: string;
+  @Field()
+  stampingAt!: number;
 }
 
 export {

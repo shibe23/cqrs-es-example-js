@@ -30,7 +30,7 @@ class AttendanceStampPosted implements AttendanceStampEvent {
     public readonly occurredAt: Date,
   ) {}
 
-  isCreated: boolean = false;
+  isCreated: boolean = true;
 
   toString() {
     return `AttendanceStampPosted(${this.id.toString()}, ${this.aggregateId.toString()},${this.stampingAt.toString()},  ${this.status.toString()}, ${this.executorId.toString()}, ${this.sequenceNumber}, ${this.occurredAt.toISOString()})`;
