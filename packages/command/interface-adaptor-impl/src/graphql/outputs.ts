@@ -6,6 +6,7 @@ class GroupChatOutput {
   groupChatId!: string;
 }
 
+@ObjectType()
 class AttendanceOutput {
   @Field()
   attendanceId!: string;

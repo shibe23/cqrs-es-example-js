@@ -413,6 +413,7 @@ class GroupChatCommandResolver {
   }
 }
 
+@Resolver()
 class AttendanceCommandResolver {
   @Query(() => HealthCheckOutput)
   async healthCheck(): Promise<HealthCheckOutput> {
