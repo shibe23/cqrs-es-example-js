@@ -8,22 +8,6 @@ import { PrismaClient } from "@prisma/client";
 class AttendanceStampDao {
   private constructor(private readonly prismaClient: PrismaClient) {}
 
-  // async insertAttendance(
-  //   aggregateId: AttendanceId,
-  //   userAccountId: UserAccountId,
-  //   createdAt: Date,
-  // ) {
-  //   return await this.prismaClient.$transaction(async (_prismaClient) => {
-  //     await _prismaClient.attendance.create({
-  //       data: {
-  //         id: aggregateId.asString(),
-  //         userAccountId: userAccountId.asString(),
-  //         createdAt: createdAt,
-  //         updatedAt: createdAt,
-  //       },
-  //     });
-  //   });
-  // }
   async insertAttendanceStamp(
     aggregateId: AttendanceId,
     userAccountId: UserAccountId,
