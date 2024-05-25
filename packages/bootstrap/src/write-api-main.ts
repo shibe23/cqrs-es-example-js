@@ -101,7 +101,6 @@ async function writeApiMain() {
     convertJSONToGroupChatEvent,
     convertJSONToGroupChat,
   );
-  // TODO: DyanamoDBのテーブル名を分ける
   const attendanceEventStore = EventStoreFactory.ofDynamoDB<
     AttendanceId,
     AttendanceStamp,

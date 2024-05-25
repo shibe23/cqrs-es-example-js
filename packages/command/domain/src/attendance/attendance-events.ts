@@ -23,7 +23,7 @@ class AttendanceStampPosted implements AttendanceStampEvent {
   private constructor(
     public readonly id: string,
     public readonly aggregateId: AttendanceId,
-    public readonly stampingAt: AttendanceStampStampingAt, // TODO: domain object化
+    public readonly stampingAt: AttendanceStampStampingAt,
     public readonly status : string, // TODO: domain object化
     public readonly executorId: UserAccountId,
     public readonly sequenceNumber: number,
