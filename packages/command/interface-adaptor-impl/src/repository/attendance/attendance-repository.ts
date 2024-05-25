@@ -12,7 +12,7 @@ import * as TE from "fp-ts/TaskEither";
 
 type SnapshotDecider = (event: AttendanceStampEvent, snapshot: AttendanceStamp) => boolean;
 
-class AttendanceRepositoryImpl implements AttendanceRepository {
+class AttendanceStampRepositoryImpl implements AttendanceRepository {
   private constructor(
     public readonly eventStore: EventStore<
       AttendanceId,
@@ -112,13 +112,13 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
     eventStore: EventStore<AttendanceId, AttendanceStamp, AttendanceStampEvent>,
     snapshotDecider: SnapshotDecider | undefined = undefined,
   ): AttendanceRepository {
-    return new AttendanceRepositoryImpl(eventStore, snapshotDecider);
+    return new AttendanceStampRepositoryImpl(eventStore, snapshotDecider);
   }
 
   withRetention(numberOfEvents: number): AttendanceRepository {
-    return new AttendanceRepositoryImpl(
+    return new AttendanceStampRepositoryImpl(
       this.eventStore,
-      AttendanceRepositoryImpl.retentionCriteriaOf(numberOfEvents),
+      AttendanceStampRepositoryImpl.retentionCriteriaOf(numberOfEvents),
     );
   }
 
@@ -129,4 +129,4 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
   }
 }
 
-export { AttendanceRepositoryImpl, RepositoryError };
+export { AttendanceStampRepositoryImpl, RepositoryError };

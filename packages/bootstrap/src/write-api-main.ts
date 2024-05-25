@@ -2,7 +2,7 @@ import {
   CommandContext,
   createCommandSchema,
   GroupChatRepositoryImpl,
-  AttendanceRepositoryImpl
+  AttendanceStampRepositoryImpl
 } from "cqrs-es-example-js-command-interface-adaptor-impl";
 import { AttendanceCommandProcessor, GroupChatCommandProcessor } from "cqrs-es-example-js-command-processor";
 import { EventStoreFactory } from "event-store-adapter-js";
@@ -120,7 +120,7 @@ async function writeApiMain() {
   const groupChatCommandProcessor =
     GroupChatCommandProcessor.of(groupChatRepository);
 
-  const attendanceRepository = AttendanceRepositoryImpl.of(attendanceEventStore);
+  const attendanceRepository = AttendanceStampRepositoryImpl.of(attendanceEventStore);
   const attendanceCommandProcessor =
     AttendanceCommandProcessor.of(attendanceRepository);
 
