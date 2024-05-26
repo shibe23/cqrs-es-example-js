@@ -13,6 +13,7 @@
     "docker-compose-down": "./tools/scripts/docker-compose-down.sh",
     "create-group-chat": "./tools/scripts/curl-create-group-chat.sh",
     "verify-group-chat": "./tools/e2e-test/verify-group-chat.sh",
+    "verify-attendance-stamp": "./tools/e2e-test/verify-attendance-stamp.sh",
     "build": "turbo build",
     "test": "turbo test",
     "fix": "turbo fix",
