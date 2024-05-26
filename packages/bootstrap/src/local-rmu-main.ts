@@ -1,4 +1,4 @@
-import { GroupChatDao, ReadModelUpdater } from "cqrs-es-example-js-rmu";
+import { GroupChatDao, AttendanceStampDao, GroupChatReadModelUpdater, AttendanceReadModelUpdater } from "cqrs-es-example-js-rmu";
 import { DescribeTableCommand, DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
   _Record,
@@ -15,6 +15,11 @@ import {
   DynamoDBStreamEvent,
 } from "aws-lambda";
 import { logger } from "./index";
+
+type ReadModelUpdaters = {
+ "groupchat" : GroupChatReadModelUpdater
+ "attendance": AttendanceReadModelUpdater;
+}
 
 async function localRmuMain() {
   logger.info("Starting local read model updater");
@@ -95,8 +100,14 @@ async function localRmuMain() {
     logger.info("Params: " + e.params);
     logger.info("Duration: " + e.duration + "ms");
   });
-  const dao = GroupChatDao.of(prisma);
-  const readModelUpdater = ReadModelUpdater.of(dao);
+  const groupChatDao = GroupChatDao.of(prisma);
+  const groupChatReadModelUpdater = GroupChatReadModelUpdater.of(groupChatDao);
+  const attendanceDao = AttendanceStampDao.of(prisma);
+  const attendanceReadModelUpdater = AttendanceReadModelUpdater.of(attendanceDao);
+  const readModelUpdaters: ReadModelUpdaters = {
+    "groupchat": groupChatReadModelUpdater,
+    "attendance": attendanceReadModelUpdater,
+  };
 
   for (;;) {
     await streamDriver(
@@ -104,7 +115,7 @@ async function localRmuMain() {
       dynamodbStreamsClient,
       streamJournalTableName,
       streamMaxItemCount,
-      readModelUpdater,
+      readModelUpdaters,
     ).catch((error) => {
       logger.error(
         "An error has occurred, but stream processing is restarted. " +
@@ -120,7 +131,7 @@ async function streamDriver(
   dynamodbStreamsClient: DynamoDBStreamsClient,
   streamJournalTableName: string,
   streamMaxItemCount: number,
-  readModelUpdater: ReadModelUpdater,
+  readModelUpdater: ReadModelUpdaters,
 ) {
   const result = await dynamodbClient.send(
     new DescribeTableCommand({ TableName: streamJournalTableName }),
@@ -173,9 +184,20 @@ async function streamDriver(
           const item = getItem(record);
           logger.info(`keys = ${JSON.stringify(keys)}`);
           logger.info(`item = ${JSON.stringify(item)}`);
-          await readModelUpdater.updateReadModel(
-            convertToEvent(record, keys, item, streamArn),
-          );
+          
+          const isGroupChat = keys.pkey.S?.includes("GroupChat")
+          if (isGroupChat) {
+            await readModelUpdater.groupchat.updateReadModel(
+              convertToEvent(record, keys, item, streamArn),
+            );
+          }
+
+          const isAttendance = keys.pkey.S?.includes("Attendance")
+          if (isAttendance) {
+            await readModelUpdater.attendance.updateReadModel(
+              convertToEvent(record, keys, item, streamArn),
+            );
+          }
         }
         processedRecordCount += records.length;
         shardIterator = getRecords.NextShardIterator;
