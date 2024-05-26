@@ -7,6 +7,14 @@ class GroupChatOutput {
 }
 
 @ObjectType()
+class AttendanceOutput {
+  @Field()
+  attendanceId!: string;
+  @Field()
+  executorId!: string;
+}
+
+@ObjectType()
 class MessageOutput {
   @Field()
   groupChatId!: string;
@@ -20,4 +28,4 @@ class HealthCheckOutput {
   value!: string;
 }
 
-export { GroupChatOutput, MessageOutput, HealthCheckOutput };
+export { GroupChatOutput, AttendanceOutput, MessageOutput, HealthCheckOutput };
