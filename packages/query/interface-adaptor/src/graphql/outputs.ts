@@ -60,4 +60,21 @@ class MessageOutput {
   updatedAt!: Date;
 }
 
-export { GroupChatOutput, MemberOutput, MessageOutput };
+@ObjectType()
+class AttendanceStampOutput {
+  @Field()
+  id!: string;
+
+  @Field()
+  userAccountId!: string;
+
+  @Field()
+  stampingAt!: Date;
+
+  @Field()
+  createdAt!: Date;
+
+  @Field()
+  updatedAt!: Date;
+}
+export { GroupChatOutput, MemberOutput, MessageOutput, AttendanceStampOutput };
