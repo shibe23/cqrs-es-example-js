@@ -15,6 +15,7 @@ import {
 } from "cqrs-es-example-js-command-interface-adaptor-if";
 import * as TE from "fp-ts/TaskEither";
 import { pipe } from "fp-ts/function";
+import { ProcessError, ProcessInternalError, ProcessNotFoundError } from "../common";
 
 class GroupChatCommandProcessor {
   private constructor(
@@ -253,27 +254,6 @@ class GroupChatCommandProcessor {
   }
 }
 
-abstract class ProcessError extends Error {}
-
-class ProcessInternalError extends ProcessError {
-  constructor(message: string, cause?: Error) {
-    super(message);
-    this.name = "ProcessError";
-    this.cause = cause;
-  }
-}
-
-class ProcessNotFoundError extends ProcessError {
-  constructor(message: string, cause?: Error) {
-    super(message);
-    this.name = "ProcessError";
-    this.cause = cause;
-  }
-}
-
 export {
   GroupChatCommandProcessor,
-  ProcessError,
-  ProcessInternalError,
-  ProcessNotFoundError,
 };
