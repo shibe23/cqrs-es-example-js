@@ -81,6 +81,14 @@ class DeleteMessageInput {
   executorId!: string;
 }
 
+@InputType()
+class CreateAttendanceInput {
+  @Field()
+  executorId!: string;
+  @Field()
+  stampingAt!: number;
+}
+
 export {
   CreateGroupChatInput,
   DeleteGroupChatInput,
@@ -88,4 +96,5 @@ export {
   RemoveMemberInput,
   PostMessageInput,
   DeleteMessageInput,
+  CreateAttendanceInput,
 };

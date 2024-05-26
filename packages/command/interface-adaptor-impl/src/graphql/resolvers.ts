@@ -7,12 +7,16 @@ import {
   PostMessageInput,
   RemoveMemberInput,
   RenameGroupChatInput,
+  CreateAttendanceInput
 } from "./inputs";
 import {
-  GroupChatCommandProcessor,
+  ProcessError,
   ProcessNotFoundError,
+  GroupChatCommandProcessor,
+  AttendanceCommandProcessor
 } from "cqrs-es-example-js-command-processor";
 import {
+  AttendanceStampStampingAt,
   GroupChatError,
   GroupChatId,
   GroupChatName,
@@ -22,10 +26,9 @@ import {
   UserAccountId,
 } from "cqrs-es-example-js-command-domain";
 import * as TE from "fp-ts/TaskEither";
-import { GroupChatOutput, HealthCheckOutput, MessageOutput } from "./outputs";
+import { GroupChatOutput, AttendanceOutput, HealthCheckOutput, MessageOutput } from "./outputs";
 import { GraphQLError } from "graphql/error";
 import { pipe } from "fp-ts/function";
-import { ProcessError } from "cqrs-es-example-js-command-processor";
 import { RepositoryError } from "cqrs-es-example-js-command-interface-adaptor-if";
 import { OptimisticLockError } from "event-store-adapter-js";
 import { TaskEither } from "fp-ts/TaskEither";
@@ -33,6 +36,7 @@ import { Task } from "fp-ts/Task";
 
 interface CommandContext {
   groupChatCommandProcessor: GroupChatCommandProcessor;
+  attendanceCommandProcessor: AttendanceCommandProcessor;
 }
 
 @Resolver()
@@ -410,6 +414,93 @@ class GroupChatCommandResolver {
   }
 }
 
+@Resolver()
+class AttendanceCommandResolver {
+  @Query(() => HealthCheckOutput)
+  async healthCheck(): Promise<HealthCheckOutput> {
+    return { value: "OK" };
+  }
+
+  @Mutation(() => AttendanceOutput)
+  async createAttendance(
+    @Ctx() { attendanceCommandProcessor }: CommandContext,
+    @Arg("input") input: CreateAttendanceInput,
+  ): Promise<AttendanceOutput> {
+    return pipe(
+      this.validateUserAccountId(input.executorId),
+      TE.chainW((validatedExecutorId) =>
+        pipe(
+          this.validateAttendanceStampStampingAt(input.stampingAt),
+          TE.map((validatedStampingAt) => ({
+            validatedExecutorId,
+            validatedStampingAt,
+          })),
+        ),
+      ),
+      TE.chainW(({ validatedExecutorId, validatedStampingAt }) =>
+          pipe(
+            attendanceCommandProcessor.createAttendanceStamp(
+              validatedExecutorId,
+              validatedStampingAt
+            ),
+            TE.map((attendanceStampEvent) => ({
+              attendanceId: attendanceStampEvent.aggregateId.asString(),
+              executorId: attendanceStampEvent.executorId.asString(),
+            })),
+          ),
+      ),
+      TE.mapLeft(this.convertToError),
+      this.toTask(),
+    )();
+  }
+  private validateUserAccountId(
+    value: string,
+  ): TaskEither<string, UserAccountId> {
+    return TE.fromEither(UserAccountId.validate(value));
+  }
+  private validateAttendanceStampStampingAt(
+    value: number,
+  ): TaskEither<string, AttendanceStampStampingAt> {
+    return TE.fromEither(AttendanceStampStampingAt.validate(new Date(value)));
+  }
+  private convertToError(error: string | ProcessError): Error {
+    if (typeof error === "string") {
+      return new ValidationGraphQLError(error);
+    } else {
+      if (
+        error.cause instanceof RepositoryError &&
+        error.cause.cause instanceof OptimisticLockError
+      ) {
+        return new OptimisticLockingGraphQLError(
+          "A conflict occurred while attempting to save your changes. Please try again.",
+          error,
+        );
+      } else if (error.cause instanceof GroupChatError) {
+        return new DomainLogicGraphQLError(
+          "The request could not be processed due to a domain logic error. Please verify your data and try again.",
+          error,
+        );
+      } else if (error instanceof ProcessNotFoundError) {
+        return new NotFoundGraphQLError(
+          "The requested resource could not be found.",
+          error,
+        );
+      }
+      return new InternalServerGraphQLError(
+        "An unexpected error occurred. Please try again later.",
+        error,
+      );
+    }
+  }
+  private toTask<A, B>(): (_: TaskEither<A, B>) => Task<B> {
+    return TE.fold<A, B, B>(
+      (e) => () => Promise.reject(e),
+      (r) => () => Promise.resolve(r),
+    );
+  }
+}
+
+
 class ValidationGraphQLError extends GraphQLError {
   constructor(message: string) {
     super(message, {
@@ -467,6 +558,7 @@ class InternalServerGraphQLError extends GraphQLError {
 export {
   CommandContext,
   GroupChatCommandResolver,
+  AttendanceCommandResolver,
   ValidationGraphQLError,
   OptimisticLockingGraphQLError,
   InternalServerGraphQLError,

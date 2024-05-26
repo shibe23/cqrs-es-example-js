@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { Arg, Ctx, Query, Resolver } from "type-graphql";
-import { GroupChatOutput, MemberOutput, MessageOutput } from "./outputs";
+import { AttendanceStampOutput, GroupChatOutput, MemberOutput, MessageOutput } from "./outputs";
 import { ILogObj, Logger } from "tslog";
 
 interface QueryContext {
@@ -173,4 +173,35 @@ class GroupChatQueryResolver {
   }
 }
 
-export { QueryContext, GroupChatQueryResolver };
+@Resolver()
+class AttendanceStampQueryResolver {
+  private readonly logger: Logger<ILogObj> = new Logger();
+
+  @Query(() => [AttendanceStampOutput])
+  async getAttendanceStamps(
+    @Ctx() { prisma }: QueryContext,
+    @Arg("userAccountId") userAccountId: string,
+  ): Promise<AttendanceStampOutput[]> {
+    const attendanceStamps: AttendanceStampOutput[] = await prisma.$queryRaw<
+    AttendanceStampOutput[]
+    >`
+        SELECT
+            at.id as id,
+            at.user_account_id as userAccountId,
+            at.stamping_at as stampingAt,
+            at.created_at as createdAt,
+            at.updated_at as updatedAt
+        FROM
+            attendance_stamp AS at
+        WHERE
+            at.status = 'ENABLED' AND at.user_account_id = ${userAccountId}`;
+    this.logger.debug("getAttendanceStamp:", attendanceStamps);
+    if (!attendanceStamps.length) {
+      throw new Error("not found");
+    }
+    this.logger.debug("getAttendanceStamps:", attendanceStamps);
+    return attendanceStamps;
+  }
+
+}
+export { QueryContext, GroupChatQueryResolver, AttendanceStampQueryResolver };

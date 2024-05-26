@@ -8,41 +8,57 @@ datasource db {
 }
 
 model GroupChats {
-  id         String     @id @db.VarChar(64)
-  disabled   Boolean
-  name       String     @db.VarChar(64)
-  ownerId    String     @db.VarChar(64) @map("owner_id")
-  createdAt  DateTime   @db.DateTime(0) @map("created_at")
-  updatedAt  DateTime   @db.DateTime(0) @map("updated_at")
-  members    Members[]
-  messages   Messages[]
+  id        String     @id @db.VarChar(64)
+  disabled  Boolean
+  name      String     @db.VarChar(64)
+  ownerId   String     @map("owner_id") @db.VarChar(64)
+  createdAt DateTime   @map("created_at") @db.DateTime(0)
+  updatedAt DateTime   @map("updated_at") @db.DateTime(0)
+  members   Members[]
+  messages  Messages[]
 
   @@map("group_chats")
 }
 
 model Members {
-  id            String      @id @db.VarChar(64)
-  groupChatId   String      @db.VarChar(64) @map("group_chat_id")
-  userAccountId String      @db.VarChar(64) @map("user_account_id")
-  role          String      @db.VarChar(64)
-  createdAt     DateTime    @db.DateTime(0) @map("created_at")
-  updatedAt     DateTime    @db.DateTime(0) @map("updated_at")
-  groupChats    GroupChats  @relation(fields: [groupChatId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "members_ibfk_1")
+  id            String     @id @db.VarChar(64)
+  groupChatId   String     @map("group_chat_id") @db.VarChar(64)
+  userAccountId String     @map("user_account_id") @db.VarChar(64)
+  role          String     @db.VarChar(64)
+  createdAt     DateTime   @map("created_at") @db.DateTime(0)
+  updatedAt     DateTime   @map("updated_at") @db.DateTime(0)
+  groupChats    GroupChats @relation(fields: [groupChatId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "members_ibfk_1")
 
   @@unique([groupChatId, userAccountId], map: "group_chat_id_user_account_id")
   @@map("members")
 }
 
 model Messages {
-  id            String      @id @db.VarChar(64)
+  id            String     @id @db.VarChar(64)
   disabled      Boolean
-  groupChatId   String      @db.VarChar(64) @map("group_chat_id")
-  userAccountId String      @db.VarChar(64) @map("user_account_id")
-  text          String      @db.Text
-  createdAt     DateTime    @db.DateTime(0) @map("created_at")
-  updatedAt     DateTime    @db.DateTime(0) @map("updated_at")
+  groupChatId   String     @map("group_chat_id") @db.VarChar(64)
+  userAccountId String     @map("user_account_id") @db.VarChar(64)
+  text          String     @db.Text
+  createdAt     DateTime   @map("created_at") @db.DateTime(0)
+  updatedAt     DateTime   @map("updated_at") @db.DateTime(0)
   groupChats    GroupChats @relation(fields: [groupChatId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "messages_ibfk_1")
 
   @@index([groupChatId], map: "group_chat_id")
   @@map("messages")
+}
+
+model AttendanceStamp {
+  id            String       @id @db.VarChar(64)
+  userAccountId String       @map("user_account_id") @db.VarChar(64)
+  createdAt     DateTime     @map("created_at") @db.DateTime(0)
+  updatedAt     DateTime     @map("updated_at") @db.DateTime(0)
+  stampingAt    DateTime     @map("stamping_at") @db.DateTime(0)
+  status        AttendanceStampStatus
+
+  @@map("attendance_stamp")
+}
+
+enum AttendanceStampStatus {
+  ENABLED
+  DISABLED
 }

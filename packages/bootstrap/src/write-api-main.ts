@@ -2,10 +2,16 @@ import {
   CommandContext,
   createCommandSchema,
   GroupChatRepositoryImpl,
+  AttendanceStampRepositoryImpl
 } from "cqrs-es-example-js-command-interface-adaptor-impl";
-import { GroupChatCommandProcessor } from "cqrs-es-example-js-command-processor";
+import { AttendanceCommandProcessor, GroupChatCommandProcessor } from "cqrs-es-example-js-command-processor";
 import { EventStoreFactory } from "event-store-adapter-js";
 import {
+  AttendanceId,
+  AttendanceStamp,
+  AttendanceStampEvent,
+  convertJSONToAttendanceStamp,
+  convertJSONToAttendanceStampEvent,
   convertJSONToGroupChat,
   convertJSONToGroupChatEvent,
   GroupChat,
@@ -81,7 +87,7 @@ async function writeApiMain() {
     dynamodbClient = new DynamoDBClient();
   }
 
-  const eventStore = EventStoreFactory.ofDynamoDB<
+  const groupChatEventStore = EventStoreFactory.ofDynamoDB<
     GroupChatId,
     GroupChat,
     GroupChatEvent
@@ -95,16 +101,35 @@ async function writeApiMain() {
     convertJSONToGroupChatEvent,
     convertJSONToGroupChat,
   );
+  const attendanceEventStore = EventStoreFactory.ofDynamoDB<
+    AttendanceId,
+    AttendanceStamp,
+    AttendanceStampEvent
+  >(
+    dynamodbClient,
+    journalTableName,
+    snapshotTableName,
+    journalAidIndexName,
+    snapshotAidIndexName,
+    shardCount,
+    convertJSONToAttendanceStampEvent,
+    convertJSONToAttendanceStamp,
+  );
   const groupChatRepository =
-    GroupChatRepositoryImpl.of(eventStore).withRetention(100);
+    GroupChatRepositoryImpl.of(groupChatEventStore).withRetention(100);
   const groupChatCommandProcessor =
     GroupChatCommandProcessor.of(groupChatRepository);
+
+  const attendanceRepository = AttendanceStampRepositoryImpl.of(attendanceEventStore);
+  const attendanceCommandProcessor =
+    AttendanceCommandProcessor.of(attendanceRepository);
 
   const schema = await createCommandSchema();
   const server = new ApolloServer<CommandContext>({ schema });
   const { url } = await startStandaloneServer(server, {
     context: async (): Promise<CommandContext> => ({
       groupChatCommandProcessor,
+      attendanceCommandProcessor
     }),
     listen: { host: apiHost, port: apiPort },
   });
