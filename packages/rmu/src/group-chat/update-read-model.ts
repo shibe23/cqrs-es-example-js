@@ -26,7 +26,7 @@ import { TextDecoder } from "node:util";
 //
 // }
 
-class ReadModelUpdater {
+class GroupChatReadModelUpdater {
   private logger: Logger<ILogObj> = new Logger();
   private decoder: TextDecoder = new TextDecoder("utf-8");
 
@@ -130,9 +130,9 @@ class ReadModelUpdater {
     });
   }
 
-  static of(groupChatDao: GroupChatDao): ReadModelUpdater {
-    return new ReadModelUpdater(groupChatDao);
+  static of(groupChatDao: GroupChatDao): GroupChatReadModelUpdater {
+    return new GroupChatReadModelUpdater(groupChatDao);
   }
 }
 
-export { ReadModelUpdater };
+export { GroupChatReadModelUpdater };
